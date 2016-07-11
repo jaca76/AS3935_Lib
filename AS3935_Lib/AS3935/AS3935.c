@@ -12,15 +12,45 @@
 	#define _OUTDOOR 0x0E
 	#define CS_HIGH RF_PORT|=(1<<CS)
 	#define CS_LOW RF_PORT&=~(1<<CS)
- volatile  int currentcount =0;
+	#define ICP PD6
+
+#define T0_ON TCCR0B |= (1<<CS02);   // wlacza timer0 i prescaler 256
+#define T0_OFF TCCR0B &= ~((1<<CS02) | (1<<CS01) | (1<<CS00));   // wylacza timer0 i prescaler 256
+#define T1_ON TCCR1B |= (1<<ICES1)|(1<<CS10)   //zezwolenia na przerwania zewnetrzne T1 zboczem wznosz¹cym
+#define T1_OFF TCCR1B &= ~(1<<CS10) | (1<<CS11) | (1<<CS12);   // blokuje przerwania zewnetrzne T1
+void start(void);
+void stop(void);
+
+
+
+ volatile  uint16_t currentcount =0;
+ volatile  uint16_t ms_flag =0;
+ volatile int Overflow_cnt=0;
+ uint8_t koniec_pomiaru=0;
+
 
 	void Perip_Init(void)
 	{
-		IRQ_PORT 	|= IRQ_PIN;
-	    EIMSK |= (1 << INT2);    // set PCIE0 to enable PCMSK0 scan
-	    EICRA |= (1 << ISC21);
-
+		PORTD&=~(1<<ICP);
+		DDRD&=~(1<<ICP);
 	}
+	void Timer_init(void)
+	{
+		TCCR0A |= (1<<WGM01); //CTC
+		TCCR0B |= (1<<CS02); //256
+		OCR0A = 143;
+		TIMSK0 |= (1<<OCIE0A);
+	}
+
+	void Counter_init(void)
+	{
+	TCCR1A = 0; // normal mode
+	TCCR1B|= (1<<ICES1)| (1<<CS10);  //  no prescaling, rising edge,
+	TIMSK1 |= (1<<TOIE1); // input capture interrupt enable, timer1 overflow interrupt enable
+	TIFR1 |= (1<<TOV1);
+	TCNT1=0;
+	}
+
 	void SPI_Init(void)
 	{
 
@@ -257,7 +287,10 @@
 
 	void tuneAntena (void)
 	{
-		int target = 3125;
+		Timer_init();
+		Counter_init();
+		uint16_t stop_count=0;
+		uint16_t target = 3125;
 		int bestdiff = 32767;
 		int currdiff = 0;
 		uint8_t bestTune = 0;
@@ -271,17 +304,27 @@
 		registerWrite(AS3935_DISP_LCO,1);
 		// tuning is not linear, can't do any shortcuts here
 		// going over all built-in cap values and finding the best
+
 		   for (currTune = 0; currTune <= 0x0F ; currTune++)
 		      {
 				registerWrite(AS3935_TUN_CAP,currTune);
 		         // wait to settle
-		         _delay_ms(10);
-		         currentcount = 0;
-		         _delay_ms(100);
-		        uart_putint(currentcount,10);
-		        uart_puts("\r\n");
-		 		currdiff = target - currentcount;
+				_delay_ms(10);
+				koniec_pomiaru=1;
+				start();
+				while (koniec_pomiaru)
+				{
+		        		 if (ms_flag>500)
+		        		 {
+		        			 stop();
+		        			 uart_putint(TCNT1,10);
+		        			 uart_puts("\r\n");
+		        			 stop_count=(65536 * Overflow_cnt) + TCNT1;
+		        			 koniec_pomiaru=0;
+		        		 }
 
+				}
+		 		currdiff = target - stop_count;
 		 		// don't look at me, abs() misbehaves
 		 		if(currdiff < 0)
 		 			currdiff = -currdiff;
@@ -304,9 +347,29 @@
 			powerUp();
 			// if error is over 109, we are outside allowed tuning range of +/-3.5%
 	}
-
-	ISR (INT2_vect)
+	void start(void)
 	{
-		currentcount++;
+		T0_ON;
+		T1_ON;
+
 	}
 
+	void stop(void)
+	{
+		Overflow_cnt=0;
+		ms_flag=0;
+		TCNT1=0;
+		T1_OFF;
+		T0_OFF;
+
+	}
+
+	ISR(TIMER0_COMPA_vect) //obsluga przerwania (Timer/Counter1 Compare Match A)
+	{
+	ms_flag++;
+	}
+
+	ISR(TIMER1_OVF_vect)
+	{
+	Overflow_cnt++;
+	}

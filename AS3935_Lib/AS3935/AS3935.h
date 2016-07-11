@@ -20,6 +20,7 @@ void CS_HIGH();
 void CS_LOW();
 void SPI_Write(uint8_t);
 void Perip_Init(void);
+void Timer_init(void);
 uint8_t SPI_Transfer(uint8_t);
 uint8_t SPI_Read();
 void SPI_Init();
@@ -34,6 +35,7 @@ uint8_t getMinimumLightnings(void);
 uint16_t lightningEnergy(void);
 uint8_t interruptSource(void);
 void tuneAntena (void);
+
 
 #define IRQ_PORT	PORTB
 #define IRQ_DIR		DDRB
