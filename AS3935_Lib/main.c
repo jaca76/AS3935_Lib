@@ -26,7 +26,7 @@ int main(void)
 {
     SPI_Init();
     Thunder_Init();
-    Perip_Init();
+   // Perip_Init();
     USART_Init(__UBRR);
     sei();
     uart_puts("******* Start ***********\r\n");

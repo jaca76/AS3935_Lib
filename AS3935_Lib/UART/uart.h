@@ -42,6 +42,7 @@ int uart_getc(void);
 void uart_putc( char data );
 void uart_puts(char *s);
 void uart_putint(int value, int radix);
+void uart_putlint(unsigned long value, int radix);
 
 char * uart_get_str(char * buf);
 

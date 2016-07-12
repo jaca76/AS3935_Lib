@@ -117,6 +117,12 @@ void uart_putint(int value, int radix)	// wysy³a na port szeregowy tekst
 	uart_puts(string);			// wyœlij string na port szeregowy
 }
 
+void uart_putlint(unsigned long value, int radix)	// wysy³a na port szeregowy tekst
+{
+	char string[33];			// bufor na wynik funkcji itoa
+	ultoa(value, string, radix);		// konwersja value na ASCII
+	uart_puts(string);			// wyœlij string na port szeregowy
+}
 
 // definiujemy procedurê obs³ugi przerwania nadawczego, pobieraj¹c¹ dane z bufora cyklicznego
 ISR( USART0_UDRE_vect  )  {
