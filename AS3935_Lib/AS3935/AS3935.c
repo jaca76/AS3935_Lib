@@ -17,9 +17,7 @@
 
 #define T0_ON TCCR0B |= (1<<CS02);   // wlacza timer0 i prescaler 256
 #define T0_OFF TCCR0B &= ~((1<<CS02) | (1<<CS01) | (1<<CS00));   // wylacza timer0 i prescaler 256
-#define T1_ON TCCR1B |= (1<<ICES1)|(1<<CS10)   //zezwolenia na przerwania zewnetrzne T1 zboczem wznosz¹cym
-#define T1_OFF TCCR1B &= ~(1<<CS10) | (1<<CS11) | (1<<CS12);   // blokuje przerwania zewnetrzne T1
-#define T11_ON TCCR1B |= (1<<CS12) | (1<<CS10);  //zezwolenia na przerwania zewnetrzne T1 zboczem wznosz¹cym
+
 void start(void);
 void stop(void);
 
@@ -31,26 +29,14 @@ void stop(void);
  uint8_t koniec_pomiaru=0;
 
 
-	void Perip_Init(void)
-	{
-		PORTD&=~(1<<ICP);
-		DDRD&=~(1<<ICP);
-	}
 	void Timer0_init(void)
 	{
 		TCCR0A |= (1<<WGM01); //CTC
 		TCCR0B |= (1<<CS02); //256
-		OCR0A = 143;
+		OCR0A = 71;
 		TIMSK0 |= (1<<OCIE0A);
 	}
 
-	void Timer1_init(void)
-	        {
-	                TIMSK1 |= (1<<OCIE1A);
-	                TCCR1B |= (1<<WGM12); //CTC
-	                TCCR1B |= (1<<CS12) | (1<<CS10); //1024
-	                OCR1A = 1799;
-	        }
 
 	void Int2_init(void)
 	{
@@ -305,9 +291,7 @@ void stop(void);
 
 	void tuneAntena (void)
 	{
-
-		//Counter_init();
-		uint16_t stop_count;
+		uint16_t stop_count=0;
 		uint16_t target = 3125;
 		int bestdiff = 32767;
 		int currdiff = 0;
@@ -321,11 +305,11 @@ void stop(void);
 		// and since we are counting for 100ms that translates to number 3125
 		// each capacitor changes second least significant digit
 		// using this timing so this is probably the best way to go
+		sei();
 		registerWrite(AS3935_LCO_FDIV,0);
 		registerWrite(AS3935_DISP_LCO,1);
 		// tuning is not linear, can't do any shortcuts here
 		// going over all built-in cap values and finding the best
-		sei();
 		   for (currTune = 0; currTune <= 0x0F ; currTune++)
 		      {
 				registerWrite(AS3935_TUN_CAP,currTune);
@@ -336,25 +320,13 @@ void stop(void);
 				start();
 				while (!koniec_pomiaru)
 				{
-		        		 if (ms_flag>1000)
+		        		 if (ms_flag>100)
 		        		 {
-		        			 // Zliczanie impuslsow z uzyciem ICP
-		        			/*
-		        			 uart_putlint(Overflow_cnt,10);
-		        			 uart_puts("\r\n");
-		        			 stop_count=(65536 * Overflow_cnt) + TCNT1;
-		        			 koniec_pomiaru=1;*/
-		        			 // Zliczanie impuslsow z uzyciem INT2
+		        	 	 // Zliczanie impuslsow z uzyciem INT2
 		        			 stop_count=currentcount;
-		        			 uart_putint(ms_flag,10);
-		        			 uart_puts("\r\n");
 		        			 stop();
-		        			 uart_putlint(stop_count,10);
-		        			 uart_puts("\r\n");
 		        			 koniec_pomiaru=1;
-
 		        		 }
-
 				}
 		 		currdiff = target - stop_count;
 		 		// don't look at me, abs() misbehaves
@@ -382,37 +354,19 @@ void stop(void);
 	void start(void)
 	{
 		T0_ON;
-	//	T1_ON;
-	//	T11_ON;
-
 	}
 
 	void stop(void)
 	{
-	//	Overflow_cnt=0;
 		ms_flag=0;
-	//	TCNT1=0;
-	//	T1_OFF;
 		T0_OFF;
 		currentcount=0;
-
 	}
 
 	ISR(TIMER0_COMPA_vect) //obsluga przerwania (Timer/Counter1 Compare Match A)
 	{
 	ms_flag++;
 	}
-
-	ISR(TIMER1_OVF_vect)
-	{
-	Overflow_cnt++;
-	}
-
-	ISR(TIMER1_COMPA_vect) //obsluga przerwania (Timer/Counter1 Compare Match A)
-	        {
-	        ms_flag++;
-	        }
-
 
 	ISR(INT2_vect)
 	{
