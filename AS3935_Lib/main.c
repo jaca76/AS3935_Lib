@@ -24,13 +24,14 @@ uint8_t min_distance=99;
 
 int main(void)
 {
-    SPI_Init();
-    Thunder_Init();
+    //SPI_Init();
+  //  Thunder_Init();
    // Perip_Init();
     USART_Init(__UBRR);
     sei();
     uart_puts("******* Start ***********\r\n");
     tuneAntena();
+    uart_puts("******* koniec ***********\r\n");
 	while (1)
 	{
 		Thunder_dane=lightningDistanceKm();
