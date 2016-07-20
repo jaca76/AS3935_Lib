@@ -31,6 +31,8 @@ int main(void)
     sei();
     uart_puts("******* Start ***********\r\n");
     tuneAntena();
+   // check_timer();
+    uart_puts("******* koniec ***********\r\n");
 	while (1)
 	{
 		Thunder_dane=lightningDistanceKm();

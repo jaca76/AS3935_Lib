@@ -34,8 +34,8 @@ uint8_t setNoiseFloor(uint8_t);
 uint8_t getMinimumLightnings(void);
 uint16_t lightningEnergy(void);
 uint8_t interruptSource(void);
-void tuneAntena (void);
-
+uint8_t tuneAntena (void);
+uint32_t millis(void);
 
 #define IRQ_PORT	PORTB
 #define IRQ_DIR		DDRB

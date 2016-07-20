@@ -24,7 +24,7 @@ void stop(void);
 
 
  volatile  uint16_t currentcount =0;
- volatile  uint16_t ms_flag =0;
+ volatile  uint32_t ms_count =0;
  volatile uint16_t Overflow_cnt=0;
  uint8_t koniec_pomiaru=0;
 
@@ -289,8 +289,10 @@ void stop(void);
 		return v;
 	}
 
-	void tuneAntena (void)
+
+	uint8_t tuneAntena (void)
 	{
+
 		uint16_t stop_count=0;
 		uint16_t target = 3125;
 		int bestdiff = 32767;
@@ -300,12 +302,15 @@ void stop(void);
 		cli();
 		Timer0_init();
 		Int2_init();
+		int32_t setupTime;
+
 		// set lco_fdiv divider to 0, which translates to 16
 		// so we are looking for 31250Hz on irq pin
 		// and since we are counting for 100ms that translates to number 3125
 		// each capacitor changes second least significant digit
 		// using this timing so this is probably the best way to go
 		sei();
+		start();
 		registerWrite(AS3935_LCO_FDIV,0);
 		registerWrite(AS3935_DISP_LCO,1);
 		// tuning is not linear, can't do any shortcuts here
@@ -317,17 +322,13 @@ void stop(void);
 				_delay_ms(10);
 				koniec_pomiaru=0;
 				currentcount=0;
-				start();
-				while (!koniec_pomiaru)
+				stop_count=0;
+				setupTime=millis()+100;
+				while ((long int)millis() - setupTime<0)
 				{
-		        		 if (ms_flag>100)
-		        		 {
-		        	 	 // Zliczanie impuslsow z uzyciem INT2
 		        			 stop_count=currentcount;
-		        			 stop();
-		        			 koniec_pomiaru=1;
-		        		 }
 				}
+				currentcount=0;
 		 		currdiff = target - stop_count;
 		 		// don't look at me, abs() misbehaves
 		 		if(currdiff < 0)
@@ -338,34 +339,42 @@ void stop(void);
 		 			bestTune = currTune;
 		 		}
 		      }
-		   uart_puts("Best Tune:  \r\n");
-		   uart_putint(bestTune,10);
-		   uart_puts("\r\n");
-		   uart_puts("Best diff:  \r\n");
-		   uart_putint(bestdiff,10);
-		   uart_puts("\r\n");
-			registerWrite(AS3935_TUN_CAP,bestTune);
+
+		if (bestdiff<109)
+		{
+		   registerWrite(AS3935_TUN_CAP,bestTune);
 			_delay_ms(2);
 			registerWrite(AS3935_DISP_LCO,0);
 			// and now do RCO calibration
 			powerUp();
-			// if error is over 109, we are outside allowed tuning range of +/-3.5%
+			uart_putint(bestTune,10);
+	 	    uart_puts(" ");
+	 	   uart_putint(bestdiff,10);
+	 	    uart_puts("\r\n");
+		return (1);
+		}
+		// if error is over 109, we are outside allowed tuning range of +/-3.5%
+		else
+		{
+			powerUp();
+			return (0);
+
+		}
 	}
 	void start(void)
 	{
 		T0_ON;
 	}
 
-	void stop(void)
-	{
-		ms_flag=0;
-		T0_OFF;
-		currentcount=0;
+
+
+	uint32_t millis(void){
+		return ms_count;
 	}
 
 	ISR(TIMER0_COMPA_vect) //obsluga przerwania (Timer/Counter1 Compare Match A)
 	{
-	ms_flag++;
+	ms_count++;
 	}
 
 	ISR(INT2_vect)
