@@ -20,6 +20,7 @@
 #define T0_ON TCCR0B |= (1<<CS02);   // wlacza timer0 i prescaler 256
 #define T0_OFF TCCR0B &= ~((1<<CS02) | (1<<CS01) | (1<<CS00));   // wylacza timer0 i prescaler 256
 
+
 void start(void);
 void stop(void);
 
