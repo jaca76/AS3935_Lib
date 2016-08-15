@@ -31,6 +31,7 @@ int main(void)
     sei();
     uart_puts("******* Start ***********\r\n");
     tuneAntena();
+    Distance=millis();
     uart_puts("******* koniec ***********\r\n");
 	while (1)
 	{

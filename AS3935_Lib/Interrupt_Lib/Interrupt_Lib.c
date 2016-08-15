@@ -8,7 +8,8 @@
 	#include <avr/interrupt.h>
 	#include <util/atomic.h>
 
-volatile  uint32_t ms_count;
+volatile  uint32_t ms_count=0;
+
 	void Timer0_init(void)
 	{
 		TCCR0A |= (1<<WGM01); //CTC
@@ -32,7 +33,10 @@ volatile  uint32_t ms_count;
 		}
 	}
 
+
 	ISR(TIMER0_COMPA_vect)
 	{
 	ms_count++;
 	}
+
+

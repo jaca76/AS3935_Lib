@@ -24,11 +24,8 @@ void stop(void);
 
 
 
- volatile  uint16_t currentcount =0;
+volatile  uint16_t currentcount =0;
  volatile uint16_t Overflow_cnt=0;
- uint8_t koniec_pomiaru=0;
-
-
 
 
 /*
@@ -307,20 +304,17 @@ void stop(void);
 				registerWrite(AS3935_TUN_CAP,currTune);
 		         // wait to settle
 				_delay_ms(10);
-				koniec_pomiaru=0;
 				currentcount=0;
 				stop_count=0;
 				setupTime=millis()+100;
+				// wait 100ms for measurments
 				while ((long int)millis() - setupTime<0)
 				{
-<<<<<<< HEAD
-					ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
+					//
+				}
+				ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
 					stop_count=currentcount;
 					}
-=======
-		        			 stop_count=currentcount;
->>>>>>> branch 'master' of ssh://git@github.com/jaca76/AS3935_Lib.git
-				}
 				currentcount=0;
 		 		currdiff = target - stop_count;
 		 		// don't look at me, abs() misbehaves
@@ -332,6 +326,7 @@ void stop(void);
 		 			bestTune = currTune;
 		 		}
 		      }
+
 
 		if (bestdiff<109)
 		{
@@ -361,26 +356,6 @@ void stop(void);
 		T0_ON;
 	}
 
-<<<<<<< HEAD
-=======
-
-
-	uint32_t millis(void){
-		return ms_count;
-	}
->>>>>>> branch 'master' of ssh://git@github.com/jaca76/AS3935_Lib.git
-
-<<<<<<< HEAD
-=======
-	ISR(TIMER0_COMPA_vect) //obsluga przerwania (Timer/Counter1 Compare Match A)
-	{
-	ms_count++;
-	}
->>>>>>> branch 'master' of ssh://git@github.com/jaca76/AS3935_Lib.git
-
-
-
-// Licznik ms
 
 // Przerwanie INT2 od AS3935
 	ISR(INT2_vect)
