@@ -25,7 +25,6 @@ void stop(void);
 
 
  volatile  uint16_t currentcount =0;
-
  volatile uint16_t Overflow_cnt=0;
  uint8_t koniec_pomiaru=0;
 
